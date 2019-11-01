@@ -23,7 +23,17 @@ router.post('/users', upload.single('avatar'), async (req, res) => {
         const user = new User(req.body);
         if(req.file.buffer) {
             const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
-            user.avatar = buffer;
+            const upload = multer({
+                limits: {
+                    fileSize: 1000000
+                },
+                fileFilter(req, file, cb) {
+                    if(!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
+                        return cb(new Error('file format should be .jpg, .jpeg or .png'));
+                    }
+                    cb(undefined, true);
+                }
+            }); user.avatar = buffer;
         }
         await user.save();
         sendMail.welcome(user.email, user.name);
