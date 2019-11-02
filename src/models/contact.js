@@ -2,13 +2,9 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 
 const contactSchema = new mongoose.Schema({
-    firstName: {
+    name: {
         type: String,
         required: true,
-        trim: true
-    },
-    lastName: {
-        type: String,
         trim: true
     },
     phone: {
@@ -40,6 +36,14 @@ const contactSchema = new mongoose.Schema({
     }
 });
 
+// remove image before sending json
+contactSchema.methods.toJSON = function() {
+    const contact = this;
+    const contactObject = contact.toObject();
+    delete contactObject.avatar;
+    
+    return contactObject;
+}
 const Contact = mongoose.model('Contact', contactSchema);
 
 module.exports = Contact;

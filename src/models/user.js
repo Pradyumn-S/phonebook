@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     username: {
        type: String,
        trim: true,
-       required: true
+       required: true,
+       unique: true
     },
     email: {
         type: String,
@@ -27,9 +28,6 @@ const userSchema = new mongoose.Schema({
         trim: true,
         minlength: 7
     },
-    avatar: {
-        type: Buffer
-    },
 });
 
 userSchema.virtual('contact', {
@@ -38,30 +36,17 @@ userSchema.virtual('contact', {
     foreignField: 'author'
 });
 
-// generating authentication token
-// userSchema.methods.generateAuthToken = async function() {
-//     const user = this;
-//     const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
-//     user.tokens = user.tokens.concat({ token })
-//     await  user.save();
-//     return token;
-// };
-
-// removing password and authToken data before sending JSON response
+// removing password before sending json
 userSchema.methods.toJSON = function() {
     const user = this;
     const userObject = user.toObject();
-
     delete userObject.password;
-    delete userObject.avatar;
-    
     return userObject;
 }
 
 // adding function for login/authentication
 userSchema.statics.findByCredentials = async (username, password) => {
     const user = await User.findOne({ username });
-
     if(!user) {
         throw new Error('unable to login');
     }
@@ -73,6 +58,20 @@ userSchema.statics.findByCredentials = async (username, password) => {
 
     return user;
 };
+
+
+userSchema.statics.findByCredentials = async (username, password) => {
+    const user = await User.findOne({ username });
+    if(!user) {
+        throw new Error('unable to login');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if(!isMatch) {
+        throw new Error('unable to login');
+    }
+    return user;
+}
 
 // hashing password before saving
 userSchema.pre('save', async function(next) {

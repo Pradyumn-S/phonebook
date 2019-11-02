@@ -6,4 +6,12 @@ const auth = (req, res, next) => {
     res.redirect('/login');
 }
 
-module.exports = auth;
+const noAuth = (req, res, next) => {
+    if(req.isAuthenticated()) {
+        return res.redirect('/');
+    }
+
+    next();
+}
+
+module.exports = { auth, noAuth };

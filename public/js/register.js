@@ -1,14 +1,32 @@
 const $registrationForm = document.querySelector('#registration-form');
 
-$registrationForm.addEventListener('submit', (e) => {
-    // preventing page reload
-    e.preventDefault();
-    const password = e.target.password.value;
-    const passwordCnf = e.target.password_confirm.value;
+$registrationForm.addEventListener('submit', (event) => {
+    // preventing page redirect
+    event.preventDefault();
+    const password = event.target.password.value;
+    const passwordCnf = event.target.password_confirm.value;
+    const body = {
+        username: event.target.username.value,
+        email: event.target.email.value,
+        password: event.target.password.value
+    }
 
+    console.log(body);
+    
     if(password === passwordCnf) {
-        $registrationForm.submit();
+        return addUser(body);
     } else {
-        alert('Passwords should match');
+        return alert('Passwords should match');
     }
 });
+
+const addUser = (body) => {
+    fetch('/users', { 
+        method: 'POST',
+        body
+    }).then((response) => {
+        response.json().then((data) => { 
+            console.log(data)
+        });
+    });
+}

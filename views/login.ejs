@@ -13,8 +13,15 @@
 <body>
     <div class="login-div">
         <img src="/img/phonebook.png" class="logo" />
-        <div class="title">Library Management System</div>
-        <div class="sub-title">GEU</div>
+        <div class="title">Phonebook</div>
+        <div class="sub-title">
+            <% if(messages.error) { %>
+                <%= messages.error %>
+            <% } %>
+        </div>
+        <% if(messages.error) { %>
+            <%= messages.error %>
+        <% } %>
         <form action="\login" method="POST">
             <div class="fields">
                 <div class="username"><input type="text" name="username" class="user-input" placeholder="Username" />

@@ -1,44 +1,33 @@
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
+const Fuse = require('fuse.js');
 const Contact = require('../models/contact');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-const upload = multer({
-    limits: {
-        fileSize: 1000000
-    },
-    fileFilter(req, file, cb) {
-        if(!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
-            return cb(new Error('file format should be .jpg, .jpeg or .png'));
-        }
-        cb(undefined, true);
-    }
-});
+const upload = multer();
 
-router.post('/contact', auth, upload.single('avatar'), async (req, res) => {
+router.post('/contacts', auth, upload.single('avatar'), async (req, res) => {
     try {
         const contact = new Contact({
             ...req.body,
             author: req.user._id
         });
 
-        if(req.file.buffer) {
+        if(req.file) {
             const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
             contact.avatar = buffer;
         }
         await contact.save();
-        res.status(201).send(task);
+        res.status(201).send(contact);
     } catch(e) {
+        console.log(e);
         res.send(400).send(e);
     };
 });
 
-// GET /tasks?completed=true
-// GET /tasks?limit=10&skip=0
-// GET /tasks?sortBy=createdAt&order=desc
 router.get('/contacts', auth, async (req, res) => {
     const sort = {};
 
@@ -47,17 +36,32 @@ router.get('/contacts', auth, async (req, res) => {
     }
 
     try {
-        await req.user.populate({
-            path: 'contacts',
-            match,
-            options: {
-                limit: parseInt(req.query.limit),
-                skip: parseInt(req.query.skip),
-                sort
-            },
-        }).execPopulate();
-        res.send(req.user.contacts);
+        let contacts = await Contact.find(
+            { author: req.user._id },
+            undefined,
+            { sort }
+        );
+        if (req.query.search) {
+            const options = {
+                shouldSort: true,
+                threshold: 0.4,
+                location: 0,
+                distance: 100,
+                maxPatternLength: 32,
+                minMatchCharLength: 1,
+                keys: [
+                    "name",
+                    "phone",
+                    "email"
+                ]
+            };
+            const fuse = new Fuse(contacts, options);
+            const result = fuse.search(req.query.search);
+            return res.send(result);
+        }
+        res.send(contacts);
     } catch(e) {
+        console.log(e);
         res.status(500).send();
     };
 });
@@ -66,20 +70,23 @@ router.get('/contacts/:id', auth, async (req, res) => {
     try {
         const contact = await Contact.findOne({
             _id: req.params.id,
-            author: req.user._id
+            author: req.user.id
         });
         if(!contact) {
+            console.log('no');
             return res.status(404).send();
         }
         res.send(contact);
     } catch(e) {
-       res.status(500).send();
+        console.log(e);
+        res.status(500).send();
     };
 });
 
 router.patch('/contacts/:id', auth, upload.single('avatar'), async (req, res) => {
+    console.log('hello');
     const updates = Object.keys(req.body);
-    const allowedUpdates = ['firstName', 'lastName', 'phone', 'email'];
+    const allowedUpdates = ['name', 'phone', 'email'];
     const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
     if(!isValidOperation) {
@@ -97,13 +104,14 @@ router.patch('/contacts/:id', auth, upload.single('avatar'), async (req, res) =>
         }
 
         updates.forEach((update) => contact[update] = req.body[update]);
-        if(req.file.buffer) {
+        if(req.file) {
             const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
             contact.avatar = buffer;
         }
         contact.save();
         res.send(contact);
     } catch(e) {
+        console.log(e);
         res.status(500).send();
     }
 });
@@ -121,6 +129,20 @@ router.delete('/contacts/:id', auth, async (req, res) => {
         res.send(contact);
     } catch(e) {
         res.status(500).send();
+    }
+});
+
+router.get('/contacts/:id/avatar', async (req, res) => {
+    try {
+        const contact= await Contact.findById(req.params.id);
+        if(!contact || !contact.avatar) {
+            throw new Error();
+        }
+
+        res.set('Content-Type', 'image/png');
+        res.send(contact.avatar);
+    } catch(e) {
+        res.status(404).send();
     }
 });
 
