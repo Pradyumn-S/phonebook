@@ -1,6 +1,8 @@
 const express = require('express');
+const multer = require('multer');
+const sharp = require('sharp');
 const Contact = require('../models/contact');
-// const auth = require('../middleware/auth');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -16,13 +18,17 @@ const upload = multer({
     }
 });
 
-router.post('/contact', auth, upload, async (req, res) => {
+router.post('/contact', auth, upload.single('avatar'), async (req, res) => {
     try {
         const contact = new Contact({
             ...req.body,
             author: req.user._id
         });
-        
+
+        if(req.file.buffer) {
+            const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
+            contact.avatar = buffer;
+        }
         await contact.save();
         res.status(201).send(task);
     } catch(e) {
@@ -71,7 +77,7 @@ router.get('/contacts/:id', auth, async (req, res) => {
     };
 });
 
-router.patch('/contacts/:id', auth, async (req, res) => {
+router.patch('/contacts/:id', auth, upload.single('avatar'), async (req, res) => {
     const updates = Object.keys(req.body);
     const allowedUpdates = ['firstName', 'lastName', 'phone', 'email'];
     const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
@@ -85,12 +91,16 @@ router.patch('/contacts/:id', auth, async (req, res) => {
             _id: req.params.id,
             author: req.user._id
         });
-
+        
         if(!contact) {
             return res.status(404).send();
         }
 
         updates.forEach((update) => contact[update] = req.body[update]);
+        if(req.file.buffer) {
+            const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
+            contact.avatar = buffer;
+        }
         contact.save();
         res.send(contact);
     } catch(e) {

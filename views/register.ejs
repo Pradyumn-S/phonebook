@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Login</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/login.css" type="text/css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,800" rel="stylesheet">
+</head>
+
+<body>
+    <div class="login-div">
+        <img src="/img/phonebook.png" class="logo" />
+        <div class="title" style="margin-top: -10px;">
+            Phonebook
+        </div>
+        <form action="/users" method="POST" style="margin-top: -70px;" 
+        id="registration-form" enctype="multipart/form-data">
+            <div class="fields">
+                <div class="username">
+                    <input type="text" name="username" class="user-input" placeholder="Username" />
+                </div>
+                <div class="email">
+                    <input type="email" name="email" class="user-input" placeholder="e-mail" />
+                </div>
+                <div class="password">
+                    <input type="password" name="password" class="pass-input" placeholder="Enter Password" />
+                </div>
+                <div class="password">
+                    <input type="password" name="password_confirm" class="pass-input" placeholder="Confirm Password" />
+                </div>
+                <div class="avatar">
+                    <input id="upload" type="file" accept="image/*" name="avatar" placeholder="avatar" />
+                </div>
+            </div>
+            <button class="signin-button">Register</button>
+            <div class="link"><a href="/login">Login</a></div>
+        </form>
+    </div>
+
+    <script src="js/register.js"></script>
+</body>
+
+</html>

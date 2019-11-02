@@ -1,7 +1,8 @@
 const express = require('express');
-const User = require('../models/user');
 const multer = require('multer');
 const sharp = require('sharp');
+const User = require('../models/user');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -23,21 +24,10 @@ router.post('/users', upload.single('avatar'), async (req, res) => {
         const user = new User(req.body);
         if(req.file.buffer) {
             const buffer = await sharp(req.file.buffer).resize({height: 250, width: 250}).png().toBuffer();
-            const upload = multer({
-                limits: {
-                    fileSize: 1000000
-                },
-                fileFilter(req, file, cb) {
-                    if(!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
-                        return cb(new Error('file format should be .jpg, .jpeg or .png'));
-                    }
-                    cb(undefined, true);
-                }
-            }); user.avatar = buffer;
+            user.avatar = buffer;
         }
         await user.save();
-        sendMail.welcome(user.email, user.name);
-        res.status(201).send({ user, token });
+        res.status(201).send(user);
     } catch(e) {
         res.status(400).send(e);
     }
