@@ -18,7 +18,7 @@ const contactRouter = require('./routes/contact');
 const siteRouter = require('./routes/site')
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 
 // define path for express config
 const publicDirPath = path.join(__dirname, '../public');
