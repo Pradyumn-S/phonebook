@@ -11,6 +11,7 @@ router.post('/users', async (req, res) => {
         console.log(req.body);
         const user = new User(req.body);
         await user.save();
+        req.flash('success_msg', 'You are registered and can now login');
         res.redirect('/');
     } catch(e) {
         res.status(400).send(e);

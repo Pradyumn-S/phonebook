@@ -1,54 +1,80 @@
-const $noticeSection = document.querySelector('#notice-section');
-const $searchSection = document.querySelector('#search-section');
-const $searchForm = document.querySelector('form');
-const $searchText = document.querySelector('.search-txt');
+const $contactForm = document.querySelector('#contact-form');
+const $searchForm = document.querySelector('#search-form');
+const $searchText = document.querySelector('.search-txt')
+
+$contactForm.addEventListener('submit', (event) => {
+    // preventing page redirect
+    event.preventDefault();
+    const body = new FormData($contactForm);
+    return addContact(body);
+});
+
+const addContact = (body) => {
+    fetch('/contacts', { 
+        method: 'POST',
+        body
+    }).then((response) => {
+        response.json().then((data) => { 
+            alert('contact added');
+            $contactForm.reset();
+            refreshList();
+        })
+    });
+}
+
+const $collection = document.querySelector('.collection');
 
 // Templates
-const noticeTemplate = document.getElementById('notice-template').innerHTML;
+const contactTemplate = document.getElementById('contact-template').innerHTML;
 
-const noticeURL = '/notice?limit=5&skip=0';
-fetch(noticeURL).then((response) => {
-    response.json().then((data) => {
-        for(let i = 0; i < data.length; i++) {
-            const html = Mustache.render(noticeTemplate, {
-                id: data[i]._id,
-                title: data[i].title,
-                body: (data[i].body.length > 200) ? data[i].body.substring(0, 200) + '...': data[i].body,
-                date: moment(data[i].createdAt).format("Do MMM YY")
-            });
-
-            $noticeSection.insertAdjacentHTML('beforeend', html);
-        }
+function deleteContact(id) {
+    console.log('hello');
+    const url = `/contacts/${id}`
+    fetch(url, { 
+        method: 'DELETE',
+    }).then((response) => {
+        alert('contact deleted')
+        refreshList();
     });
-});
+}
+
+function refreshList(url = '/contacts?sortBy=name&order=asc') {
+    $collection.innerHTML = "";
+    fetch(url).then((response) => {
+        response.json().then((data) => {
+            for(let i = 0; i < data.length; i++) {
+                const html = Mustache.render(contactTemplate, {
+                    id: data[i]._id,
+                    name: data[i].name,
+                    phone: data[i].phone,
+                    email: data[i].email,        
+                });
+    
+                $collection.insertAdjacentHTML('beforeend', html);
+            }
+        });
+    });
+};
+
+refreshList();
 
 $searchForm.addEventListener('submit', (e) => {
     // preventing page reload
     e.preventDefault();
-    console.log('working')
     const q = $searchText.value.trim();
-    const url = `/notice?search=${encodeURIComponent(q)}`;
+    const url = `/contacts?search=${encodeURIComponent(q)}`;
 
     if(q == '') {
-        return;
+        return refreshList();
     }
 
-    $searchSection.innerHTML = '';
-
-    document.getElementById('notice-block').classList.add('hide');
-    document.getElementById('search-result').classList.remove('hide');
-    fetch(url).then((response) => {
-        response.json().then((data) => { 
-            for(let i = 0; i < data.length; i++) {
-                const html = Mustache.render(noticeTemplate, {
-                    id: data[i]._id,
-                    title: data[i].title,
-                    body: (data[i].body.length > 200) ? data[i].body.substring(0, 200) + '...': data[i].body,
-                    date: moment(data[i].createdAt).format("Do MMM YY")
-                });
-    
-                $searchSection.insertAdjacentHTML('beforeend', html);
-            }
-        });
-    });
+    refreshList(url);
 });
+
+function s() {
+    if(document.querySelector('#hidden-block').classList.contains('hide')) {
+        document.querySelector('#hidden-block').classList.remove('hide');
+    } else {
+        document.querySelector('#hidden-block').classList.add('hide');
+    }
+};
